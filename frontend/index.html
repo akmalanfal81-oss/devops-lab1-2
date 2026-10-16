@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Multi-Tier DevOps UNDIKNAS</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; background: #f8fafc; color: #1e293b; }
+    .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgb(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #cbd5e1; padding: 0.65rem; text-align: left; }
+    th { background: #f1f5f9; }
+    form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    input { flex: 1; padding: 0.5rem; border: 1px solid #94a3b8; border-radius: 4px; }
+    button { padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .badge { background: #dcfce7; color: #166534; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Katalog Layanan Multi-Tier</h2>
+    <p>Identitas Praktikan & Status Kontainer: <strong id="healthStatus">Memeriksa...</strong></p>
+    <form id="serviceForm">
+      <input type="text" id="service_name" placeholder="Nama Layanan Baru" required>
+      <input type="text" id="owner_team" placeholder="Nama & NIM Anda" required>
+      <button type="submit">Simpan ke Database</button>
+    </form>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Nama Layanan</th><th>Pemilik</th><th>Penyimpanan</th><th>Waktu Dibuat</th></tr>
+      </thead>
+      <tbody id="serviceList"></tbody>
+    </table>
+  </div>
+  <script>
+    async function checkHealth() {
+      try {
+        const res = await fetch('/healthz');
+        const data = await res.json();
+        document.getElementById('healthStatus').innerText = `${data.status} | ${data.student_name} (${data.student_nim}) | ${data.container_or_host_id}`;
+      } catch (e) {
+        document.getElementById('healthStatus').innerText = 'Gagal terhubung ke backend';
+      }
+    }
+    async function loadServices() {
+      const res = await fetch('/api/services');
+      const data = await res.json();
+      const tbody = document.getElementById('serviceList');
+      tbody.innerHTML = '';
+      data.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${item.id}</td><td>${item.service_name}</td><td>${item.owner_team}</td><td><span class="badge">${item.storage_type}</span></td><td>${new Date(item.created_at).toLocaleString()}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+    document.getElementById('serviceForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const service_name = document.getElementById('service_name').value;
+      const owner_team = document.getElementById('owner_team').value;
+      await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service_name, owner_team })
+      });
+      document.getElementById('service_name').value = '';
+      document.getElementById('owner_team').value = '';
+      loadServices();
+    });
+    checkHealth();
+    loadServices();
+  </script>
+</body>
+</html>

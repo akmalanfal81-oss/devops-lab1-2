@@ -1,0 +1,5 @@
+.env
+backend/server-app
+backend/app-server
+*.exe
+.DS_Store
